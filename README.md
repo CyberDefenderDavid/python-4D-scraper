@@ -5,7 +5,7 @@ Automatically scrapes daily 4D results from Singapore Pools at 6:30pm SGT and up
 ## Features
 
 - Scrapes draw date, number, 1st/2nd/3rd prizes, starter & consolation
-- Saves into `data/result.json`
+- Saves into `docs/result.json`
 - Retry logic if results are not yet updated
 - Auto-deployed viewer (dropdown + table)
 
@@ -13,8 +13,7 @@ Automatically scrapes daily 4D results from Singapore Pools at 6:30pm SGT and up
 
 ```
 .github/workflows/scrape.yml    → GitHub Actions
-scripts/main.sh                 → Bash scraper (curl + pup + jq)
-data/result.json                → JSON results
-data/raw_result.html            → Debug copy of scraped HTML
-public/index.html               → GitHub Pages frontend
+scraper.py                      → python beautifulsoup4 requests
+docs/result.json                → JSON results
+docs/index.html                 → GitHub Pages frontend
 ```
