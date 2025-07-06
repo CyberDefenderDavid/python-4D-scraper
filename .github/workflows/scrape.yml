@@ -2,7 +2,11 @@ name: Scrape 4D Results
 
 on:
   schedule:
-    - cron: '30 10 * * *'  # 6:30pm SGT = 10:30am UTC
+    - cron: '30 10 * * *'  # 6:30pm SGT
+    - cron: '45 10 * * *'  # 6:45pm SGT
+    - cron: '15 11 * * *'  # 7:15pm SGT
+    - cron: '0  12 * * *'  # 8:00pm SGT
+    - cron: '0  13 * * *'  # 9:00pm SGT
   workflow_dispatch:
 
 jobs:
