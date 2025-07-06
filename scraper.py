@@ -9,23 +9,39 @@ url = "https://www.singaporepools.com.sg/DataFileArchive/Lottery/Output/fourd_re
 json_out = os.path.join("docs", "result.json")
 os.makedirs("debug", exist_ok=True)
 
-# Fetch and save HTML
+# Fetch and parse HTML
 response = requests.get(url)
 soup = BeautifulSoup(response.text, "html.parser")
-
-# Parse all draw tables
 draw_tables = soup.select("table.orange-header")
+
+# Load existing results
 if os.path.exists(json_out):
     with open(json_out, "r", encoding="utf-8") as f:
         existing = json.load(f)
 else:
     existing = []
 
+# ✅ EARLY EXIT: Check latest draw_no and skip if already recorded
+if existing:
+    latest_known_draw = existing[0].get("draw_no", "")
+    try:
+        latest_scraped_draw = draw_tables[0].select_one("th.drawNumber").text.strip().split("Draw No.")[1].strip()
+        if latest_scraped_draw == latest_known_draw:
+            msg = f"✅ Already have latest draw no. {latest_known_draw}. Exiting."
+            print(msg)
+            with open("debug/debug_log.txt", "a") as f:
+                f.write(f"[{datetime.datetime.now().isoformat()}] {msg}\n")
+            exit(0)
+    except Exception as e:
+        pass  # If something breaks, continue with normal scrape
+
+# Track existing draw numbers
 existing_draws = {d["draw_no"] for d in existing if "draw_no" in d}
 if existing:
     with open("debug/last_known_draw.txt", "w") as f:
         f.write(existing[0].get("draw_no", ""))
 
+# Parse all draw tables
 all_results = []
 for main_table in draw_tables:
     starter_table = main_table.find_next_sibling("table", class_="table-striped")
@@ -61,6 +77,7 @@ for main_table in draw_tables:
     with open("debug/scraped_draw.txt", "w") as f:
         f.write(draw_no)
 
+# Save if new results were found
 if all_results:
     combined = all_results + existing
     with open(json_out, "w", encoding="utf-8") as f:
@@ -69,6 +86,7 @@ if all_results:
 else:
     msg = "ℹ️ No new results found"
 
+# Log outcome
 with open("debug/debug_log.txt", "a") as f:
     f.write(f"[{datetime.datetime.now().isoformat()}] {msg}\n")
 
