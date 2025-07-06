@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Singapore 4D Results</title>
+  <meta charset="UTF-8" />
+</head>
+<body>
+  <h1>Singapore 4D Results</h1>
+  <select id="drawSelect"></select>
+  <div id="resultDisplay"></div>
+
+  <script>
+    async function loadResults() {
+      const res = await fetch('result.json');
+      const draws = await res.json();
+
+      const dropdown = document.getElementById('drawSelect');
+      draws.forEach((draw, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.text = `${draw.draw_date} (#${draw.draw_no})`;
+        dropdown.appendChild(opt);
+      });
+
+      dropdown.onchange = () => display(draws[dropdown.value]);
+      dropdown.selectedIndex = 0;
+      display(draws[0]);
+    }
+
+    function display(draw) {
+      const html = `
+        <h2>${draw.draw_date} (#${draw.draw_no})</h2>
+        <p><strong>1st:</strong> ${draw.first}</p>
+        <p><strong>2nd:</strong> ${draw.second}</p>
+        <p><strong>3rd:</strong> ${draw.third}</p>
+        <h3>Starter Prizes</h3><p>${draw.starter_prizes.join(", ")}</p>
+        <h3>Consolation Prizes</h3><p>${draw.consolation_prizes.join(", ")}</p>
+      `;
+      document.getElementById('resultDisplay').innerHTML = html;
+    }
+
+    loadResults();
+  </script>
+
+<hr />
+<footer style="font-size: 0.9em; color: #666; text-align: center; margin-top: 2em;">
+  <p>
+    This site is an <strong>unofficial viewer</strong> of Singapore 4D results.<br>
+    Data is sourced from <a href="https://www.singaporepools.com.sg" target="_blank" rel="noopener noreferrer">Singapore Pools</a> and refreshed daily.<br>
+    We are <strong>not affiliated</strong> with or endorsed by Singapore Pools.<br>
+    This project is for <strong>learning GitHub Actions and workflow automation</strong>.
+  </p>
+</footer>
+</body>
+</html>

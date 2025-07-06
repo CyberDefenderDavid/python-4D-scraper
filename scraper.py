@@ -1,0 +1,75 @@
+import os
+import json
+import requests
+import datetime
+from bs4 import BeautifulSoup
+
+# URL and paths
+url = "https://www.singaporepools.com.sg/DataFileArchive/Lottery/Output/fourd_result_top_draws_en.html"
+json_out = os.path.join("docs", "result.json")
+os.makedirs("debug", exist_ok=True)
+
+# Fetch and save HTML
+response = requests.get(url)
+soup = BeautifulSoup(response.text, "html.parser")
+
+# Parse all draw tables
+draw_tables = soup.select("table.orange-header")
+if os.path.exists(json_out):
+    with open(json_out, "r", encoding="utf-8") as f:
+        existing = json.load(f)
+else:
+    existing = []
+
+existing_draws = {d["draw_no"] for d in existing if "draw_no" in d}
+if existing:
+    with open("debug/last_known_draw.txt", "w") as f:
+        f.write(existing[0].get("draw_no", ""))
+
+all_results = []
+for main_table in draw_tables:
+    starter_table = main_table.find_next_sibling("table", class_="table-striped")
+    consolation_table = starter_table.find_next_sibling("table", class_="table-striped") if starter_table else None
+    if not (starter_table and consolation_table): continue
+
+    try:
+        draw_date = main_table.select_one("th.drawDate").text.strip()
+        draw_no = main_table.select_one("th.drawNumber").text.strip().split("Draw No.")[1].strip()
+        rows = main_table.select("tbody tr")
+        first = rows[0].select("td")[0].text.strip()
+        second = rows[1].select("td")[0].text.strip()
+        third = rows[2].select("td")[0].text.strip()
+        starter = [td.text.strip() for td in starter_table.select("tbody tr td")]
+        consolation = [td.text.strip() for td in consolation_table.select("tbody tr td")]
+    except Exception as e:
+        continue
+
+    if draw_no in existing_draws:
+        continue
+
+    result = {
+        "draw_date": draw_date,
+        "draw_no": draw_no,
+        "first": first,
+        "second": second,
+        "third": third,
+        "starter_prizes": starter,
+        "consolation_prizes": consolation
+    }
+
+    all_results.append(result)
+    with open("debug/scraped_draw.txt", "w") as f:
+        f.write(draw_no)
+
+if all_results:
+    combined = all_results + existing
+    with open(json_out, "w", encoding="utf-8") as f:
+        json.dump(combined, f, indent=2)
+    msg = f"✅ Added {len(all_results)} new result(s)"
+else:
+    msg = "ℹ️ No new results found"
+
+with open("debug/debug_log.txt", "a") as f:
+    f.write(f"[{datetime.datetime.now().isoformat()}] {msg}\n")
+
+print(msg)

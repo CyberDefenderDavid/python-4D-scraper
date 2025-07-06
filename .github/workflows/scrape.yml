@@ -1,0 +1,43 @@
+name: Scrape 4D Results
+
+on:
+  schedule:
+    - cron: '30 10 * * *'  # 6:30pm SGT = 10:30am UTC
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install beautifulsoup4 requests
+
+    - name: Ensure docs/result.json exists
+      run: |
+        mkdir -p docs
+        if [ ! -f docs/result.json ]; then
+          echo "[]" > docs/result.json
+          echo "Created empty docs/result.json"
+        fi
+
+    - name: Run scraper
+      run: python scraper.py
+
+    - name: Commit updated results
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Update 4D results and debug logs"
+        file_pattern: |
+          docs/result.json
+          debug/*
+        commit_user_name: github-actions[bot]
+        commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
